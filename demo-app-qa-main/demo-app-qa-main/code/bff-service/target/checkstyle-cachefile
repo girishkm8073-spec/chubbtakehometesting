@@ -1,0 +1,18 @@
+#Thu Oct 22 17:09:07 UTC 2026
+C\:\\Users\\girishkm\\Desktop\\demo-app-qa-main\\code\\bff-service\\src\\main\\java\\com\\example\\demo\\adapter\\in\\websocket\\WebSocketMessage.java=1780758876000
+C\:\\Users\\girishkm\\Desktop\\demo-app-qa-main\\code\\bff-service\\src\\main\\java\\com\\example\\demo\\adapter\\out\\http\\CorrelationIdInterceptor.java=1780758876000
+C\:\\Users\\girishkm\\Desktop\\demo-app-qa-main\\code\\bff-service\\src\\main\\java\\com\\example\\demo\\adapter\\out\\http\\TracingInterceptor.java=1780758876000
+C\:\\Users\\girishkm\\Desktop\\demo-app-qa-main\\code\\bff-service\\src\\main\\java\\com\\example\\demo\\application\\auth\\ExternalServiceException.java=1780758876000
+C\:\\Users\\girishkm\\Desktop\\demo-app-qa-main\\code\\bff-service\\src\\main\\java\\com\\example\\demo\\application\\auth\\KeycloakAdminPort.java=1780758876000
+C\:\\Users\\girishkm\\Desktop\\demo-app-qa-main\\code\\bff-service\\src\\main\\java\\com\\example\\demo\\application\\auth\\LoginCommand.java=1780758876000
+C\:\\Users\\girishkm\\Desktop\\demo-app-qa-main\\code\\bff-service\\src\\main\\java\\com\\example\\demo\\application\\auth\\LoginResult.java=1780758876000
+C\:\\Users\\girishkm\\Desktop\\demo-app-qa-main\\code\\bff-service\\src\\main\\java\\com\\example\\demo\\application\\auth\\RefreshTokenResult.java=1780758876000
+C\:\\Users\\girishkm\\Desktop\\demo-app-qa-main\\code\\bff-service\\src\\main\\java\\com\\example\\demo\\application\\auth\\SignupCommand.java=1780758876000
+C\:\\Users\\girishkm\\Desktop\\demo-app-qa-main\\code\\bff-service\\src\\main\\java\\com\\example\\demo\\application\\auth\\SignupResult.java=1780758876000
+C\:\\Users\\girishkm\\Desktop\\demo-app-qa-main\\code\\bff-service\\src\\main\\java\\com\\example\\demo\\config\\ContractTestSecurityConfiguration.java=1780758876000
+C\:\\Users\\girishkm\\Desktop\\demo-app-qa-main\\code\\bff-service\\src\\main\\java\\com\\example\\demo\\config\\RestClientConfig.java=1780758876000
+C\:\\Users\\girishkm\\Desktop\\demo-app-qa-main\\code\\bff-service\\src\\main\\java\\com\\example\\demo\\config\\SchemathesisSecurityConfiguration.java=1780758876000
+C\:\\Users\\girishkm\\Desktop\\demo-app-qa-main\\code\\bff-service\\src\\main\\resources\\application.properties=1780758876000
+C\:\\Users\\girishkm\\Desktop\\demo-app-qa-main\\code\\bff-service\\src\\test\\resources\\testcontainers.properties=1780758876000
+configuration*?=838B43E43B2A0F3797787DD0970074879435BF19
+module-resource*?\:checkstyle-suppressions.xml=8B6009CDC60E3DA3A6DF0306FBF7614C9E05BFA5
