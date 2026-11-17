@@ -21,9 +21,7 @@ export const ClaimsEmptyState = () => {
       </p>
 
       <button
-        onClick={() => {
-          window.location.assign('/claims/new');
-        }}
+        onClick={() => router.push('/claims/new')}
         className="rounded-lg bg-primary px-6 py-3 font-medium text-white transition-colors hover:bg-primary-hover"
       >
         Submit Your First Claim

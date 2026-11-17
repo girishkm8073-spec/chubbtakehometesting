@@ -1,16 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-const safeStorage = () => {
-  const storage = typeof window !== 'undefined' ? window.localStorage : undefined;
-
-  return createJSONStorage(() => ({
-    getItem: (key: string) => storage?.getItem(key) ?? null,
-    setItem: (key: string, value: string) => storage?.setItem(key, value),
-    removeItem: (key: string) => storage?.removeItem(key),
-  }));
-};
-
 export type ThemeName = 'default' | 'corporate' | 'warm';
 
 interface ThemeStore {
@@ -32,7 +22,7 @@ export const useThemeStore = create<ThemeStore>()(
     }),
     {
       name: 'theme-storage',
-      storage: safeStorage(),
+      storage: createJSONStorage(() => sessionStorage),
     }
   )
 );

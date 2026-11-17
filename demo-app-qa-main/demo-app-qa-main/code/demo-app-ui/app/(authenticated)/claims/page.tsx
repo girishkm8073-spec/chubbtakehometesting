@@ -40,10 +40,6 @@ const ClaimsPage = () => {
     }
   }, [error, router]);
 
-  const goToNewClaim = useCallback(() => {
-    window.location.assign('/claims/new');
-  }, []);
-
   return (
     <div className="px-4 py-8">
       <div className="mx-auto max-w-7xl">
@@ -51,7 +47,7 @@ const ClaimsPage = () => {
         <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <h1 className="text-3xl font-bold text-text-primary">My Claims</h1>
           <button
-            onClick={goToNewClaim}
+            onClick={() => router.push('/claims/new')}
             className="rounded-lg bg-primary px-6 py-2 font-medium text-white transition-colors hover:bg-primary-hover"
           >
             Submit New Claim

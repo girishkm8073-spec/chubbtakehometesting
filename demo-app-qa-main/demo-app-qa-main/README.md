@@ -235,10 +235,27 @@ docker compose -f docker-compose.apps.yml up --build --pull never ui
 
 ---
 
-## Executive summary for interviews
-This repository was assessed using a risk-based QA strategy focused on the app’s most critical production seams: claim lifecycle, auth/session handling, and event-driven updates. We validated the core domain logic, the BFF security boundary, and the Kafka/WebSocket integration flow under Java 21, and the remaining issue is a single frontend smoke defect in the authenticated route flow from `/claims` to `/claims/new`.
+## QA assessment
 
-This means the business logic and integration architecture are in good shape, while the one open issue is localized to the browser navigation layer rather than the backend services.
+The app was assessed with a risk-first strategy focused on the claim lifecycle, auth/session handling and event fan-out (Kafka to WebSocket). All backend tests pass. Two UI tests fail on purpose: they expose a mismatch in how the theme preference is saved (finding F1).
 
-## Master QA report
-- `MASTER_QA_REPORT.md` — consolidated report with the full QA narrative, findings, and validation status
+### Running the tests
+```bash
+# Backend (Java 21)
+cd code/claims-service && mvn test
+cd code/bff-service && mvn test
+
+# UI: the API client is generated, not committed, so generate it first
+cd code/demo-app-ui
+npm ci
+npm run generate:api
+npm test                                  # Vitest
+npx playwright install chromium
+npx playwright test --project=chromium    # smoke flow (starts the dev server itself)
+```
+Tests tagged `integration` need Docker: `mvn test -Dgroups=integration -Dsurefire.excludedGroups=`.
+
+### QA documents
+- `MASTER_QA_REPORT.md`: results, what changed, findings (including one withdrawn false positive)
+- `docs/qa/TEST_STRATEGY_NOTES.md`: risks, what was tested and left out, next steps
+- `docs/qa/AI_WORKING_JOURNAL.md`: AI suggestions accepted, challenged and overridden

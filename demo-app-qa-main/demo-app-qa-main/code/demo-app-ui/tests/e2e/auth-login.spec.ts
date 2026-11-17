@@ -94,7 +94,14 @@ test.describe('auth smoke flow', () => {
     await page.locator('#password').fill('Claimant123!');
     await page.getByRole('button', { name: /log in/i }).click();
 
+    // The claims list is fetched from a client-side effect, so its response proves the page
+    // has hydrated. The server-rendered button is visible earlier but has no click handler yet,
+    // and the "No claims yet" empty state is also server-rendered, so neither is a safe signal.
+    const claimsListLoaded = page.waitForResponse(
+      (response) => response.url().endsWith('/api/claims') && response.request().method() === 'GET'
+    );
     await expect(page).toHaveURL(/\/claims$/);
+    await claimsListLoaded;
     await page.getByRole('button', { name: /submit new claim/i }).click();
 
     await expect(page).toHaveURL(/\/claims\/new$/);
@@ -106,7 +113,8 @@ test.describe('auth smoke flow', () => {
     await page.locator('#description').fill('Water damage caused by burst pipe in the kitchen.');
     await page.getByRole('button', { name: /^Next$/i }).click();
 
-    await page.getByRole('button', { name: /^Submit Claim$/i }).click();
+    // The header nav also has a "Submit Claim" button, so target the wizard's one in <main>.
+    await page.getByRole('main').getByRole('button', { name: /^Submit Claim$/i }).click();
 
     await expect(page).toHaveURL(/\/claims$/);
     expect(claimPostBody).toMatchObject({

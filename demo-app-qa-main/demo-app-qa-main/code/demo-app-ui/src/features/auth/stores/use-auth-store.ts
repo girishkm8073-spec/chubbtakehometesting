@@ -1,15 +1,5 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-
-const safeStorage = () => {
-  const storage = typeof window !== 'undefined' ? window.localStorage : undefined;
-
-  return createJSONStorage(() => ({
-    getItem: (key: string) => storage?.getItem(key) ?? null,
-    setItem: (key: string, value: string) => storage?.setItem(key, value),
-    removeItem: (key: string) => storage?.removeItem(key),
-  }));
-};
+import { persist } from 'zustand/middleware';
 
 export interface User {
   userId: string;
@@ -37,7 +27,6 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: 'auth-storage',
-      storage: safeStorage(),
     }
   )
 );
