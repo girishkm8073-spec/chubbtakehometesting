@@ -107,14 +107,19 @@ test.describe('Service hardening @api @security', () => {
     ['claims-service', env.claimsServiceBaseUrl],
     ['bff-service', env.bffBaseUrl],
   ] as const) {
-    test(`TC-API-SEC-001 ${serviceName} does not expose /actuator/env without authentication`, async ({
+    test(`TC-API-SEC-001 ${serviceName} exposes only the health endpoint to anonymous callers`, async ({
       playwright,
     }) => {
+      // Read the actuator discovery page rather than calling /heapdump, so the test never downloads a heap dump.
+      const PUBLIC_ACTUATOR_LINKS = ['self', 'health', 'health-path'];
       const context = await playwright.request.newContext({ baseURL: baseUrl });
 
-      const response = await context.get(ApiRoutes.actuator.env);
+      const response = await context.get(ApiRoutes.actuator.root);
+      const links =
+        response.status() === HttpStatus.OK ? Object.keys(((await response.json()) as { _links: object })._links) : [];
 
-      expect(response.status(), `${serviceName} /actuator/env is publicly readable`).not.toBe(HttpStatus.OK);
+      const nonPublic = links.filter((link) => !PUBLIC_ACTUATOR_LINKS.includes(link));
+      expect(nonPublic, `${serviceName} publishes internal actuator endpoints anonymously`).toEqual([]);
       await context.dispose();
     });
   }

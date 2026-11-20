@@ -43,7 +43,11 @@ test.describe('Claims API — submit a claim @api @claims', () => {
       HttpStatus.OK,
     );
 
-    expect(fetched).toEqual(created);
+    const { createdAt, updatedAt, ...businessFields } = created;
+    expect(fetched).toMatchObject(businessFields);
+    // POST echoes the in-memory Instant; GET returns the stored TIMESTAMP (microseconds). Compare at ms precision.
+    expect(Date.parse(fetched.createdAt)).toBe(Date.parse(createdAt));
+    expect(Date.parse(fetched.updatedAt)).toBe(Date.parse(updatedAt));
   });
 
   test('TC-API-CLM-003 leading and trailing whitespace is trimmed from description and location', async ({

@@ -40,6 +40,7 @@ export const env = {
   bffOpenApiSpecPath: path.resolve(qaRoot, required('BFF_OPENAPI_SPEC')),
   claimEventSchemaDir: path.resolve(qaRoot, required('CLAIM_EVENT_SCHEMA_DIR')),
   realtimeEventTimeoutMs: requiredNumber('REALTIME_EVENT_TIMEOUT_MS'),
+  testTimezone: required('TEST_TIMEZONE'),
   kafka: {
     brokers: required('KAFKA_BROKERS').split(','),
     claimEventsTopic: required('KAFKA_CLAIM_EVENTS_TOPIC'),

@@ -31,7 +31,7 @@ export default defineConfig({
     {
       name: 'ui',
       testDir: './tests/ui',
-      use: { ...devices['Desktop Chrome'], baseURL: env.uiBaseUrl },
+      use: { ...devices['Desktop Chrome'], baseURL: env.uiBaseUrl, timezoneId: env.testTimezone },
     },
   ],
 });

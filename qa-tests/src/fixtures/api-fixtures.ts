@@ -8,10 +8,10 @@ import { env, UserCredentials } from '../config/env';
 
 type WorkerFixtures = {
   claimantCredentials: UserCredentials;
-  adminSession: ApiSession;
 };
 
 type TestFixtures = {
+  adminSession: ApiSession;
   claimantSession: ApiSession;
   otherClaimantSession: ApiSession;
   anonymousSession: ApiSession;
@@ -33,14 +33,13 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
     },
     { scope: 'worker' },
   ],
-  adminSession: [
-    async ({}, use) => {
-      const session = await ApiSession.authenticated(env.users.admin);
-      await use(session);
-      await session.dispose();
-    },
-    { scope: 'worker' },
-  ],
+  // Test-scoped on purpose: the BFF access_token cookie expires after 5 minutes,
+  // so a worker-long session would start failing with 401 part-way through a run.
+  adminSession: async ({}, use) => {
+    const session = await ApiSession.authenticated(env.users.admin);
+    await use(session);
+    await session.dispose();
+  },
   claimantSession: async ({ claimantCredentials }, use) => {
     const session = await ApiSession.authenticated(claimantCredentials);
     await use(session);

@@ -35,7 +35,7 @@ test.describe('Admin API — claim status workflow @api @claims @admin', () => {
         expect(updated.claimId).toBe(claim.claimId);
         expect(updated.status).toBe(to);
         expect(Date.parse(updated.updatedAt)).toBeGreaterThanOrEqual(Date.parse(claim.updatedAt));
-        expect(updated.createdAt).toBe(claim.createdAt);
+        expect(Date.parse(updated.createdAt), 'createdAt must never change').toBe(Date.parse(claim.createdAt));
 
         const ownerView = await expectStatus<ClaimResponse>(await claimsApi.getById(claim.claimId), HttpStatus.OK);
         expect(ownerView.status, 'claimant must see the new status').toBe(to);

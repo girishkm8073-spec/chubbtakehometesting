@@ -16,8 +16,8 @@ export const ApiRoutes = {
     dashboardStats: '/api/admin/dashboard/stats',
   },
   actuator: {
+    root: '/actuator',
     health: '/actuator/health',
-    env: '/actuator/env',
   },
 } as const;
 
