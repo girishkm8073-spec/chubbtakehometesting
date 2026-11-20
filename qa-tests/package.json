@@ -1,0 +1,26 @@
+{
+  "name": "claims-qa-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Playwright API, UI and contract tests for the demo claims application",
+  "scripts": {
+    "test": "playwright test",
+    "test:api": "playwright test --project=api",
+    "test:contract": "playwright test --project=contract",
+    "test:ui": "playwright test --project=ui",
+    "test:smoke": "playwright test --grep @smoke",
+    "report": "playwright show-report",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.58.2",
+    "@types/js-yaml": "4.0.9",
+    "@types/node": "22.10.2",
+    "ajv": "8.17.1",
+    "ajv-formats": "3.0.1",
+    "dotenv": "16.4.7",
+    "js-yaml": "4.1.0",
+    "kafkajs": "2.2.4",
+    "typescript": "5.7.2"
+  }
+}
