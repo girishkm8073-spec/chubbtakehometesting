@@ -56,7 +56,7 @@ The automated test name starts with the same ID. Data columns refer to `ClaimRul
 | TC-API-CLM-054 | Anonymous list refused | No session | GET /api/claims | — | 401 | P1 | API/Security | REQ-09 |
 | TC-API-CLM-055 | Claimant blocked from admin API | Claimant logged in | 1. GET /api/admin/claims 2. PATCH own claim status | Own claim | 403 for both | P1 | API/Security | REQ-05 |
 | TC-API-CLM-056 | Concurrency attribution | Two claimants | 1. 10+10 parallel POSTs, each with a unique tag 2. List mine | 20 tagged claims | Each claim is in its submitter's list only (**DEF-001 probe**) | P1 | API/Concurrency | REQ-03, 04 |
-| TC-API-SEC-001 | Actuator not public | — | GET /actuator/env on :8080 and :8090 | — | Not 200 (**fails, DEF-009**) | P1 | API/Security | REQ-09 |
+| TC-API-SEC-001 | Only health is public | — | GET /actuator (the discovery page) anonymously on :8080 and :8090 | — | No published link other than self/health (**fails: heapdump, env, loggers…, DEF-009**) | P1 | API/Security | REQ-09 |
 
 ## 4. API — Admin workflow (`tests/api/admin-claim-workflow.api.spec.ts`)
 
@@ -64,7 +64,7 @@ The automated test name starts with the same ID. Data columns refer to `ClaimRul
 |----|-----------|---------------|-----------|-----------|-----------------|-----|------|-----|
 | TC-API-ADM-{FROM}-{TO} (allowed, 6 cases) | Each allowed transition works | Claim moved to FROM via API | 1. PATCH status TO 2. Owner GETs claim | `AllowedTransitions` matrix | 200 ClaimResponse; status TO; updatedAt ≥ before; createdAt unchanged; owner sees TO | P1 | API/State | REQ-06 |
 | TC-API-ADM-{FROM}-{TO} (forbidden, 13 cases) | Every other transition is refused | Claim in FROM | 1. PATCH status TO 2. Owner GETs claim | Complement of the matrix (excluding the disputed pair DEF-010) | 400 ProblemDetail; status still FROM (**fails: 500, DEF-004**) | P1 | API/State/Neg | REQ-06 |
-| TC-API-ADM-060 | Unknown claim | Admin | PATCH random UUID | UNDER_REVIEW | 404 ProblemDetail | P2 | API/Neg | REQ-06 |
+| TC-API-ADM-060 | Unknown claim | Admin | PATCH random UUID | UNDER_REVIEW | 404 ProblemDetail (**fails: empty body, DEF-021**) | P2 | API/Neg | REQ-06 |
 | TC-API-ADM-061 | Unknown status value | Admin + claim | PATCH `newStatus: PAID` | Invalid enum | 400 | P2 | API/Neg | REQ-06 |
 | TC-API-ADM-070 | Admin sees all | Claim by fresh claimant | GET /api/admin/claims | — | Contains the claim; schema valid | P1 | API | REQ-05 |
 | TC-API-ADM-071 (×5) | Status filter | Claim in each status | GET ?status=S | Each status | Contains the claim; only status S returned | P2 | API/EP | REQ-05 |
@@ -78,7 +78,7 @@ The automated test name starts with the same ID. Data columns refer to `ClaimRul
 |----|-----------|---------------|-----------|-----------|-----------------|-----|------|-----|
 | TC-CON-API-001 | Login contract | Fresh claimant | POST /api/auth/login | Valid credentials | 200 UserResponse schema; role CLAIMANT; HttpOnly `access_token` cookie | P1 | Contract | REQ-08, 09 |
 | TC-CON-API-002 | Login error contract | — | POST login with a wrong password | — | 401 ProblemDetail schema | P2 | Contract | REQ-08 |
-| TC-CON-API-003 | 401 body contract | — | GET /api/claims anonymously | — | 401 with a ProblemDetail body | P2 | Contract | REQ-08 |
+| TC-CON-API-003 | 401 body contract | — | GET /api/claims anonymously | — | 401 with a ProblemDetail body (**fails: empty body, DEF-021**) | P2 | Contract | REQ-08 |
 | TC-CON-API-005 | Status update contract | Claim | PATCH UNDER_REVIEW | — | 200 full ClaimResponse | P2 | Contract | REQ-08 |
 | (inline) | Every success and error response in §2–4 | — | `expectContractResponse` / `expectProblemDetail` | — | Body validates against bff-api.yml for (operationId, status) | P1 | Contract | REQ-08 |
 | TC-CON-EVT-001 | claim-submitted event schema | Direct-Kafka mode | 1. Subscribe to claim-events 2. Submit a claim | Valid claim | Payload validates against ClaimSubmittedMessage.json; values match the claim (**fails, DEF-006**) | P2 | Contract/Integration | REQ-08 |
@@ -135,5 +135,5 @@ The automated test name starts with the same ID. Data columns refer to `ClaimRul
 | REQ-05 | 12 | DEF-008 |
 | REQ-06 | 25 | DEF-004 |
 | REQ-07 | 3 | DEF-005 |
-| REQ-08 | all API responses + 5 | DEF-006 |
+| REQ-08 | all API responses + 5 | DEF-006, DEF-021 |
 | REQ-09 | 9 | DEF-009, DEF-011 |

@@ -23,6 +23,19 @@
 | 16 | Execution | — | **Limitation acknowledged** | Docker and Node were not installed on the authoring machine. I chose to finish a complete, reviewed suite and documentation rather than half-test locally, and to state clearly that nothing has been run yet. Defects are "code-verified" until a run attaches evidence. |
 | 17 | Scope cuts | AI offered JUnit tests, K6 and visual regression | **Deferred** | The repo already ships unit tests; K6 and visual regression are bonus items. Time went to the Claims API, contracts and E2E, where the defects are. Listed as next steps. |
 
+### Self-audit pass ("are these really app bugs, not our misses?")
+I asked the AI to re-trace every defect end to end and to look for evidence that would *disprove* it, then to audit our own scripts for false-failure risks.
+
+| # | Finding | Decision | Reasoning |
+|---|---------|----------|-----------|
+| 18 | DEF-009 claimed `/actuator/env` leaks values | **Corrected** | Spring Boot masks env values unless `show-values` is set (it isn't). The real leak is `/heapdump`. The test now checks the actuator discovery page instead of `/env`. |
+| 19 | DEF-013 claimed the toast navigates to a 404 | **Corrected** | react-hot-toast has no `onClick` option, so clicking does nothing. Severity lowered to Low. |
+| 20 | Our admin API session was worker-scoped | **Script bug — fixed** | The BFF `access_token` cookie expires after 5 minutes, so long runs would have produced false 401s. The session is now per test. |
+| 21 | Test dates used the laptop's local timezone | **Script bug — fixed** | The server uses UTC `LocalDate.now()`. In IST 00:00–05:30, "today" is a future date for the server, so the boundary test would fail falsely. Dates and the browser now use `TEST_TIMEZONE` (UTC). |
+| 22 | POST and GET timestamps were compared as exact strings | **Script risk — fixed** | POST echoes the in-memory Instant; GET returns the Postgres TIMESTAMP (microseconds). Timestamps are now compared at millisecond precision. |
+| 23 | 401/404 tests expected a ProblemDetail body | **Kept; new defect DEF-021** | The contract documents a body, but the BFF sends an empty one. The failure is the app's fault, so it is now logged rather than left unexplained. |
+| 24 | DEF-001 probe could pass despite the bug | **Documented** | A race test only proves presence, never absence. Noted in the defect; K6 is the follow-up. |
+
 ## What I would tell the panel about working with AI here
 - The AI was fastest at **reading across tiers** and spotting seam bugs (token race, swallowed status codes, CDC flag). Every one was verified in the source before logging.
 - Its weakest output was **assertion quality**: vacuous checks, fixture "usage" asserts, single-source checks of persisted data. Most of my overrides were there.

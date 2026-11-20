@@ -25,11 +25,11 @@
 | DEF-006 | Kafka events violate their own AsyncAPI schemas; schema validation is disabled, which hides this | Medium | Open – code-verified | claims-service | TC-CON-EVT-001, -002 |
 | DEF-007 | Sub-cent claim amounts are silently rounded on save; the create response differs from the stored value | Medium | Open – code-verified | claims-service / DB | TC-API-CLM-004 |
 | DEF-008 | The unfiltered admin claim list is not sorted (every filtered list is newest-first) | Medium | Open – code-verified | claims-service | TC-API-ADM-074 |
-| DEF-009 | Actuator endpoints (env, heapdump, loggers…) are publicly reachable on both services | High | Open – code-verified | Security | TC-API-SEC-001 |
+| DEF-009 | Every actuator endpoint, including heapdump and loggers, is published without authentication on both services | High | Open – code-verified | Security | TC-API-SEC-001 |
 | DEF-010 | UNDER_REVIEW → SUBMITTED (backwards) is allowed with no stated requirement | Low | Query | Domain | (excluded from pass/fail) |
 | DEF-011 | Logout does not invalidate the session: the request lacks a CSRF token, so cookies survive | Medium | Open – code-verified | UI / BFF | TC-UI-AUTH-006 |
 | DEF-012 | Wizard "Cancel" discards typed but uncommitted step-1 data without confirmation | Low | Open – code-verified | UI | TC-UI-CLM-016 |
-| DEF-013 | Clicking the claimant's real-time toast navigates to /claims/{id}, a route that does not exist (404) | Medium | Open – code-verified | UI | manual |
+| DEF-013 | Clicking the claimant's real-time toast does nothing (the click handler is ignored, and its target route does not exist) | Low | Open – code-verified | UI | manual |
 | DEF-014 | Real-time toasts show raw enum values ("UNDER_REVIEW") instead of labels | Low | Open – code-verified | UI | TC-UI-RT-001 (asserts current text) |
 | DEF-015 | Date handling depends on timezone: the wizard's max date is UTC, and list dates shift by a day west of UTC | Medium | Open – code-verified | UI | manual (timezone matrix) |
 | DEF-016 | The UI's REST base URL falls back to :8080 (claims-service) instead of :8090 (BFF) | Low | Open – code-verified | UI config | manual |
@@ -37,6 +37,23 @@
 | DEF-018 | Metric tags include userId/adminUserId, giving unbounded label cardinality | Low | Open – code-verified | Observability | review |
 | DEF-019 | Signup name rules differ between the UI (1–255) and the contract (2–100) | Low | Open – code-verified | UI / contract | review |
 | DEF-020 | Count badge reads "1 claims"; admin "View Details" is a no-op ("coming soon") | Low | Open – code-verified | UI | review |
+| DEF-021 | BFF error responses (401, and 400/403/404 from admin status update) have an empty body instead of the documented ProblemDetail | Medium | Open – code-verified | BFF / contract | TC-CON-API-003, TC-API-ADM-060 |
+
+## How each defect was verified (and what could still be wrong)
+Each defect was traced through the **whole request path** (UI → BFF → claims-service → DB/Kafka, plus compose config). I then searched for evidence that would *disprove* it:
+- global `@ControllerAdvice` / `@ResponseStatus` / `ErrorController` (none beyond the handlers cited)
+- framework defaults (Spring Boot error handling, actuator value masking, Spring Data `save()` → `merge()`)
+- generator settings (`useBeanValidation=true`; `okhttp-gson` client)
+- environment overrides in `docker-compose.*.yml` and `start-*.sh`
+
+Two defects were **corrected** by this pass: DEF-009 and DEF-013 had overstated impact. One was **added**: DEF-021.
+
+What code review cannot settle, and the first run will:
+- **DEF-001** is a race. Its probe test (TC-API-CLM-056) can **pass even though the defect exists**, if the timing never collides. A pass is not proof of safety; a single failure is proof of the bug. A K6 load run is the stronger check.
+- **DEF-011** depends on the browser keeping the cookie after the 403 logout. It is predicted from code, not yet observed.
+- **DEF-015** depends on the tester's timezone. The suite pins `TEST_TIMEZONE=UTC` so ordinary runs are deterministic, and the defect is exercised by deliberately changing it.
+
+Any failure that does not match the "Actual" described here is treated as a **test-script issue**, investigated, and fixed in the suite — never logged as an application defect.
 
 ---
 
@@ -54,6 +71,7 @@
 - **Expected:** every claim belongs to the user who submitted it.
 - **Actual (by design of the code):** the bearer token is shared mutable state. If thread A sets its token and thread B overwrites it before A's HTTP call, A's claim is created as B (or A reads B's data). Admin calls mix the service-account token with user tokens in the same way.
 - **Impact:** claims recorded against the wrong policyholder; personal data disclosure. Load makes it worse.
+- **Confidence:** the shared mutable state is certain from the code (the okhttp-gson `ApiClient.setBearerToken` writes into a shared `HttpBearerAuth`). Whether a given test run hits the race window is probabilistic: see "How each defect was verified".
 - **Fix:** pass the token per request (a header in a request-scoped interceptor), or build an API instance per request. Never mutate a singleton.
 - **Evidence:** TC-API-CLM-056 report and screenshot (attach `docs/evidence/DEF-001.png`).
 
@@ -119,9 +137,12 @@
 
 ### DEF-009 — Actuator exposed without authentication (High, security)
 - **Where:** both `application.yml` files set `management.endpoints.web.exposure.include: '*'`. Both `SecurityConfig` classes set `.requestMatchers("/actuator/**").permitAll()`. Compose publishes ports 8080 and 8090.
-- **Steps:** `GET http://localhost:8080/actuator/env` and `/actuator/heapdump` without a token.
-- **Expected:** 401/404 — only `health` should be public.
-- **Actual:** configuration, environment and heap memory (which can contain tokens and DB credentials) are readable, and `/actuator/loggers` can be changed.
+- **Steps:** `GET http://localhost:8080/actuator` without a token, then follow the published links.
+- **Expected:** only `health` is public.
+- **Actual:** every endpoint is listed and reachable anonymously. Specifically:
+  - `/actuator/heapdump` returns a full JVM heap, which contains in-memory JWTs, the service-account token and the datasource password.
+  - `/actuator/loggers` accepts POST to change log levels.
+  - `/actuator/env` and `/configprops` reveal every property *name* and source. Spring Boot masks the *values* by default (`show-values` is not set), so env values are **not** directly readable. The heap dump is the real leak.
 
 ### DEF-010 — Backward transition UNDER_REVIEW → SUBMITTED (Query)
 - **Where:** `ClaimStatus.canTransitionTo` and the UI's `claim-status-transitions.ts` both allow it.
@@ -139,8 +160,11 @@
 ### DEF-012 — Unsaved wizard data lost without confirmation (Low)
 - **Where:** `claims/new/page.tsx:18-20` only asks for confirmation when step data was already committed with "Next".
 
-### DEF-013 — Toast links to a missing page (Medium)
-- **Where:** `use-claim-realtime-handler.ts:70` pushes `/claims/{id}`. There is no such route; details open as a modal on `/claims`.
+### DEF-013 — Real-time toast is not clickable (Low)
+- **Where:** `use-claim-realtime-handler.ts:65-71` passes `onClick: () => router.push('/claims/{id}')` to `toast.success(...)`.
+  - react-hot-toast has no `onClick` option, so the handler is silently ignored and clicking does nothing.
+  - Even if it were wired up, `/claims/{id}` is not a route: details open as a modal on `/claims` (`app/(authenticated)/claims` has only `page.tsx` and `new/`).
+- **Impact:** the code comment calls this "Issue #1 CRITICAL: Add onClick navigation to toast", but the feature is not delivered.
 
 ### DEF-014 — Raw enums in notifications (Low)
 - **Where:** `use-claim-realtime-handler.ts:59,66` use `newStatus` directly instead of `STATUS_LABELS`.
@@ -160,6 +184,13 @@
 
 ### DEF-018 — High-cardinality metrics (Low)
 - **Where:** `CreateClaimUseCase` and `UpdateClaimStatusUseCase` tag counters with `userId`/`adminUserId`, giving one time series per user.
+
+### DEF-021 — Error responses without the documented ProblemDetail body (Medium)
+- **Where:**
+  - 401s are produced by Spring Security's resource-server entry point, which writes only a `WWW-Authenticate` header. `SecurityExceptionHandler`'s `@ExceptionHandler(AuthenticationException)` never sees filter-level failures.
+  - `AdminController.updateClaimStatus` returns `ResponseEntity.badRequest().build()`, `.notFound().build()` and `status(FORBIDDEN).build()`, all with no body.
+  - `bff-api.yml` documents `application/json` ProblemDetail for every one of these.
+- **Impact:** the generated UI client cannot show a meaningful message, and the contract is broken for any other consumer.
 
 ### DEF-019 / DEF-020 — Minor UI and contract inconsistencies (Low)
 - Signup name length: UI 1–255 versus contract 2–100.
